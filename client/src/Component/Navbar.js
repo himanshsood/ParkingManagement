@@ -9,7 +9,7 @@ const Navbar = () => {
       </div>
       <ul className="navbar-links">
         <li><a href="#home">Home</a></li>
-        <li><a href="#about">Parking Space</a></li>
+        <li><a href="../Component/Navbar.js">Parking Space</a></li>
         <li><a href="#services">Booking</a></li>
         <li><a href="#contact">Wallet</a></li>
         <li><a href="#contact">Profile</a></li>

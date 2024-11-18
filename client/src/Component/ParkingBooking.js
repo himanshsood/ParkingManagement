@@ -1,23 +1,59 @@
-// ParkingBooking.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import "../Styles/ParkingSlot.css";
 
 const ParkingBooking = () => {
   const [vehicleType, setVehicleType] = useState('');
-  const [slots, setSlots] = useState(
-    Array(10).fill(null) // 10 slots initially
-  );
+  const [slots, setSlots] = useState([]);
+
+  useEffect(() => {
+    // Fetch slots from the backend
+    const fetchSlots = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/slots');
+        const data = await response.json();
+        setSlots(data);
+      } catch (error) {
+        console.error('Error fetching slots:', error);
+      }
+    };
+
+    fetchSlots();
+  }, []);
 
   const handleVehicleTypeChange = (e) => setVehicleType(e.target.value);
 
-  const handleSlotBooking = (index) => {
-    const updatedSlots = [...slots];
-    if (!updatedSlots[index]) {
-      updatedSlots[index] = vehicleType;
-      setSlots(updatedSlots);
-      alert(`Slot ${index + 1} booked for a ${vehicleType}`);
-    } else {
-      alert(`Slot ${index + 1} is already booked!`);
+  const handleSlotBooking = async (index) => {
+    if (!vehicleType) {
+      alert('Please select a vehicle type');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/slots/${index}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ vehicleType }),
+      });
+
+      if (response.ok) {
+        const updatedSlots = await response.json();
+        alert(updatedSlots.message);
+
+        // Fetch updated slots from the backend
+        const fetchSlots = async () => {
+          const res = await fetch('http://localhost:5000/api/slots');
+          const data = await res.json();
+          setSlots(data);
+        };
+        fetchSlots();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message);
+      }
+    } catch (error) {
+      console.error('Error booking slot:', error);
     }
   };
 
