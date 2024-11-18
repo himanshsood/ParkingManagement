@@ -5,8 +5,8 @@ const ParkingBooking = () => {
   const [vehicleType, setVehicleType] = useState('');
   const [slots, setSlots] = useState([]);
 
+  // Fetch slots from the backend when the component loads
   useEffect(() => {
-    // Fetch slots from the backend
     const fetchSlots = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/slots');
@@ -20,46 +20,73 @@ const ParkingBooking = () => {
     fetchSlots();
   }, []);
 
+  // Handle vehicle type selection
   const handleVehicleTypeChange = (e) => setVehicleType(e.target.value);
 
-  const handleSlotBooking = async (index) => {
-    if (!vehicleType) {
-      alert('Please select a vehicle type');
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:5000/api/slots/${index}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ vehicleType }),
-      });
-
-      if (response.ok) {
-        const updatedSlots = await response.json();
-        alert(updatedSlots.message);
-
-        // Fetch updated slots from the backend
-        const fetchSlots = async () => {
-          const res = await fetch('http://localhost:5000/api/slots');
-          const data = await res.json();
-          setSlots(data);
-        };
-        fetchSlots();
-      } else {
-        const errorData = await response.json();
-        alert(errorData.message);
+  // Book or release a slot
+  const handleSlotAction = async (index) => {
+    if (!slots[index]) {
+      // Slot is available; book it
+      if (!vehicleType) {
+        alert('Please select a vehicle type');
+        return;
       }
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/slots/${index}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ vehicleType }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          alert(result.message);
+          fetchSlots(); // Refresh the slots
+        } else {
+          const errorData = await response.json();
+          alert(errorData.message);
+        }
+      } catch (error) {
+        console.error('Error booking slot:', error);
+      }
+    } else {
+      // Slot is booked; release it
+      try {
+        const response = await fetch(`http://localhost:5000/api/slots/${index}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          alert(result.message);
+          fetchSlots(); // Refresh the slots
+        } else {
+          const errorData = await response.json();
+          alert(errorData.message);
+        }
+      } catch (error) {
+        console.error('Error releasing slot:', error);
+      }
+    }
+  };
+
+  // Fetch the latest slot data from the backend
+  const fetchSlots = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/slots');
+      const data = await response.json();
+      setSlots(data);
     } catch (error) {
-      console.error('Error booking slot:', error);
+      console.error('Error fetching slots:', error);
     }
   };
 
   return (
     <div className="parking-container">
-      <h2>Book a Parking Slot</h2>
+      <h2>Manage Parking Slots</h2>
 
       <label>Select Vehicle Type:</label>
       <select value={vehicleType} onChange={handleVehicleTypeChange}>
@@ -74,7 +101,7 @@ const ParkingBooking = () => {
           <div
             key={index}
             className={`slot ${slot ? 'booked' : 'available'}`}
-            onClick={() => handleSlotBooking(index)}
+            onClick={() => handleSlotAction(index)}
           >
             {slot ? `${slot}` : `Slot ${index + 1}`}
           </div>
